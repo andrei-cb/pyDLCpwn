@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 from colorama import Fore, Style
 from modules.steam_store import SteamStore
 from utils import *
@@ -67,7 +68,10 @@ async def install_cream_api(game, selected_dlcs, config):
 
         api32_path = os.path.join(dll_directory, 'steam_api.dll')
         api32_orig = os.path.join(dll_directory, 'steam_api_o.dll')
-        cream_api32 = os.path.join(os.path.dirname(__file__), 'steam_api.dll')
+        if getattr(sys, 'frozen', False):
+            cream_api32 = os.path.join(os.path.abspath(os.path.dirname(sys.executable)), 'steam_api.dll')
+        else:
+            cream_api32 = os.path.join(os.path.dirname(__file__), 'steam_api.dll')
         
         if os.path.exists(api32_path):
             print(f"\n{Fore.CYAN}Installing 32-bit CreamAPI...{Style.RESET_ALL}")
@@ -78,7 +82,10 @@ async def install_cream_api(game, selected_dlcs, config):
 
         api64_path = os.path.join(dll_directory, 'steam_api64.dll')
         api64_orig = os.path.join(dll_directory, 'steam_api64_o.dll')
-        cream_api64 = os.path.join(os.path.dirname(__file__), 'steam_api64.dll')
+        if getattr(sys, 'frozen', False):
+            cream_api64 = os.path.join(os.path.abspath(os.path.dirname(sys.executable)), 'steam_api64.dll')
+        else:
+            cream_api64 = os.path.join(os.path.dirname(__file__), 'steam_api64.dll')
         
         if os.path.exists(api64_path):
             print(f"\n{Fore.CYAN}Installing 64-bit CreamAPI...{Style.RESET_ALL}")

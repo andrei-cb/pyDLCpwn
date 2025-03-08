@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import sys
 from colorama import Fore, Style
 from utils import *
 
@@ -75,7 +76,10 @@ async def install_scream_api(game, enabled_items):
 
         api32_path = os.path.join(dll_directory, 'EOSSDK-Win32-Shipping.dll')
         api32_orig = os.path.join(dll_directory, 'EOSSDK-Win32-Shipping_o.dll')
-        scream_api32 = os.path.join(os.path.dirname(__file__), 'EOSSDK-Win32-Shipping.dll')
+        if getattr(sys, 'frozen', False):
+            scream_api32 = os.path.join(os.path.abspath(os.path.dirname(sys.executable)), 'EOSSDK-Win32-Shipping.dll')
+        else:
+            scream_api32 = os.path.join(os.path.dirname(__file__), 'EOSSDK-Win32-Shipping.dll')
         
         if os.path.exists(api32_path):
             print(f"\n{Fore.CYAN}Installing 32-bit ScreamAPI...{Style.RESET_ALL}")
@@ -86,7 +90,10 @@ async def install_scream_api(game, enabled_items):
 
         api64_path = os.path.join(dll_directory, 'EOSSDK-Win64-Shipping.dll')
         api64_orig = os.path.join(dll_directory, 'EOSSDK-Win64-Shipping_o.dll')
-        scream_api64 = os.path.join(os.path.dirname(__file__), 'EOSSDK-Win64-Shipping.dll')
+        if getattr(sys, 'frozen', False):
+            scream_api64 = os.path.join(os.path.abspath(os.path.dirname(sys.executable)), 'EOSSDK-Win64-Shipping.dll')
+        else:
+            scream_api64 = os.path.join(os.path.dirname(__file__), 'EOSSDK-Win64-Shipping.dll')
         
         if os.path.exists(api64_path):
             print(f"\n{Fore.CYAN}Installing 64-bit ScreamAPI...{Style.RESET_ALL}")
