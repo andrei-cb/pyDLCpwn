@@ -29,7 +29,7 @@ pyDLCpwn is a tool designed to unlock DLC content for games on Steam and Epic Ga
 - Replaces Epic Online Services SDK DLLs with ScreamAPI versions
 - Creates a JSON configuration file to specify which items to unlock
 
-- Note: It currently works only with DLCs still available in Steam and Epic Games stores.
+Note: It currently works only with DLCs still available in Steam and Epic Games stores.
 
 ## Usage
 
