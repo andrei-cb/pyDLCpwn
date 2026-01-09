@@ -11,43 +11,60 @@ def get_scream_api_components():
         "EOSSDK-Win32-Shipping_o.dll",
         "EOSSDK-Win64-Shipping.dll",
         "EOSSDK-Win64-Shipping_o.dll",
-        "ScreamAPI.json"
+        "ScreamAPI.config.json"
     ]
 
-async def generate_scream_api_config(enabled_items=None):
+async def generate_scream_api_config(game, enabled_items=None):
     """Generate ScreamAPI configuration."""
 
     override_items = list(enabled_items) if enabled_items else []
     
+    # Create the override dictionary where selected items are unlocked
+    override_dlc_status = {item: "unlocked" for item in override_items}
+
     config = {
-        "version": 2,
-        "logging": True,
-        "eos_logging": False,
+        "$schema": "https://raw.githubusercontent.com/acidicoala/ScreamAPI/refs/tags/v4.0.0/res/ScreamAPI.schema.json",
+        "$version": 3,
+        "logging": False,
+        "log_eos": False,
         "block_metrics": False,
-        "catalog_items": {
-            "unlock_all": False,
-            "override": override_items
-        },
-        "entitlements": {
-            "unlock_all": False,
-            "auto_inject": False,
-            "inject": []
-        }
+        "namespace_id": game.get('app_id', ''),
+        "default_dlc_status": "unlocked",
+        "override_dlc_status": override_dlc_status,
+        "extra_graphql_endpoints": [],
+        "extra_entitlements": {}
     }
     return config
 
 async def read_scream_api_config(game):
     """Read ScreamAPI configuration from the DLL directory."""
     
-    config_path = os.path.join(game['dll_directory'], 'ScreamAPI.json')
-    if not os.path.exists(config_path):
-        print(f"{Fore.RED}Error: ScreamAPI configuration file not found in {Fore.WHITE}{dll_directory}{Style.RESET_ALL}")
-        return None, None
+    # Try new config name first
+    config_path = os.path.join(game['dll_directory'], 'ScreamAPI.config.json')
+    legacy_path = os.path.join(game['dll_directory'], 'ScreamAPI.json')
     
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
+    current_path = config_path if os.path.exists(config_path) else legacy_path
     
-    return config
+    if not os.path.exists(current_path):
+        print(f"{Fore.RED}Error: ScreamAPI configuration file not found in {Fore.WHITE}{game['dll_directory']}{Style.RESET_ALL}")
+        return None
+    
+    try:
+        with open(current_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+            
+        # Backward compatibility layer for main.py
+        if "override_dlc_status" in config:
+            override_list = [k for k, v in config["override_dlc_status"].items() if v == "unlocked"]
+            return {
+                "catalog_items": {
+                    "override": override_list
+                }
+            }
+        return config
+    except Exception as e:
+        print(f"{Fore.RED}Error reading configuration: {e}{Style.RESET_ALL}")
+        return None
 
 async def install_scream_api(game, enabled_items):
     """Install CreamAPI by generating and writing the configuration file."""
@@ -67,8 +84,8 @@ async def install_scream_api(game, enabled_items):
             print(f"{Fore.YELLOW}Skipping installation to prevent conflicts{Style.RESET_ALL}")
             raise Exception("ScreamAPI already installed")
         
-        ini_content = await generate_scream_api_config(enabled_items)
-        config_path = os.path.join(dll_directory, 'ScreamAPI.json')
+        ini_content = await generate_scream_api_config(game, enabled_items)
+        config_path = os.path.join(dll_directory, 'ScreamAPI.config.json')
         
         with open(config_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(ini_content, indent=4))
@@ -117,7 +134,7 @@ async def install_scream_api(game, enabled_items):
     input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
 
 async def update_scream_api_config(game, enabled_items):
-    """Update only the ScreamAPI.json file without modifying DLLs."""
+    """Update only the ScreamAPI.components.json file without modifying DLLs."""
     print(f"\n{Fore.CYAN}Updating CreamAPI configuration for {Fore.WHITE}{game['name']}{Style.RESET_ALL}")
     
     try:
@@ -133,9 +150,17 @@ async def update_scream_api_config(game, enabled_items):
         if not os.path.exists(api32_backup) and not os.path.exists(api64_backup):
             print(f"{Fore.RED}Error: ScreamAPI is not installed. Please install it first.{Style.RESET_ALL}")
             raise Exception("ScreamAPI not installed")
+
+        # Check for old config and remove it if it exists
+        old_config_path = os.path.join(dll_directory, 'ScreamAPI.json')
+        if os.path.exists(old_config_path):
+            try:
+                os.remove(old_config_path)
+            except:
+                pass
             
-        config_path = os.path.join(dll_directory, 'ScreamAPI.json')
-        config_content = await generate_scream_api_config(enabled_items)
+        config_path = os.path.join(dll_directory, 'ScreamAPI.config.json')
+        config_content = await generate_scream_api_config(game, enabled_items)
         
         with open(config_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(config_content, indent=4))
@@ -167,10 +192,16 @@ async def uninstall_scream_api(game):
             print(f"{Fore.YELLOW}No ScreamAPI installation found to uninstall{Style.RESET_ALL}")
             raise Exception("No ScreamAPI installation found")
         
-        config_path = os.path.join(dll_directory, 'ScreamAPI.json')
+        config_path = os.path.join(dll_directory, 'ScreamAPI.config.json')
+        old_config_path = os.path.join(dll_directory, 'ScreamAPI.json')
+        
         if os.path.exists(config_path):
             os.remove(config_path)
             print(f"{Fore.GREEN}✓ Removed configuration file{Style.RESET_ALL}")
+        
+        if os.path.exists(old_config_path):
+            os.remove(old_config_path)
+            print(f"{Fore.GREEN}✓ Removed legacy configuration file{Style.RESET_ALL}")
             
         api32_path = os.path.join(dll_directory, 'EOSSDK-Win32-Shipping.dll')
         if os.path.exists(api32_backup):
