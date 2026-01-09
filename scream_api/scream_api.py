@@ -134,7 +134,7 @@ async def install_scream_api(game, enabled_items):
     input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
 
 async def update_scream_api_config(game, enabled_items):
-    """Update only the ScreamAPI.components.json file without modifying DLLs."""
+    """Update only the ScreamAPI.config.json file without modifying DLLs."""
     print(f"\n{Fore.CYAN}Updating CreamAPI configuration for {Fore.WHITE}{game['name']}{Style.RESET_ALL}")
     
     try:
